@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>DICE</title>
+		<script src="./js/phaser.min.js"></script>
+		<style>
+			body {
+				background-color: black;
+				background-image: url(./img/7_starry_night.jpg);
+			}
+			
+			div {
+				text-align: center;
+				padding: 1%;
+			}
+			
+		</style>
+	</head>
+	<body>
+		<div>
+			<img src="./img/DICE_wordmark.png" alt="Title">
+		</div>
+		<div id="container">
+		<script type="text/javascript">
+			window.onload = function(){
+				var game = new Phaser.Game(690, 600, Phaser.CANVAS, 'container', {preload: preload, create: create, update: update});
+				var height = game.height;
+				var width = game.width;
+				var image;
+				var imageHeight;
+				var allImages = new Array(10);
+				var actualImageNumber;
+				var initialPosX;
+				var initialPosY;
+				var timer;
+				var shakeTimer;
+				var nextTime = 0;
+				var event = 0;
+				
+				var backgroundTrack;
+				var backgroundIsPlaying;
+				var runningTrack;
+				var breathingTrack;
+				var trackIsPlaying;
+				var drippingTrack;
+				
+				var allDialog = new Array(3);
+				var actualDialog = 0;
+				var dialogTimer;
+				var dialogImage;
+				var diaFadingTimer;
+				
+				var fixedImage;
+				var multipleDia;
+				var nextDiaTimer;
+
+				function preload() {									
+//        			game.scale.pageAlignVertically = true;
+        			game.scale.pageAlignHorizontally = true;
+					game.load.image(allImages[0] = 'case0', './img/page0.png');
+					game.load.image(allImages[1] = 'case1', './img/page1-1.png');
+					game.load.image(allImages[2] = 'case2', './img/page1-2.png');
+					game.load.image(allImages[3] = 'case3', './img/page1-3.png');
+					game.load.image(allImages[4] = 'case4', './img/page1-4.png');
+					game.load.image(allImages[5] = 'case5', './img/page1-5.png');
+					game.load.image(allImages[6] = 'case6', './img/page1-6.png');
+					game.load.image(allImages[7] = 'case7', './img/page1-7.png');
+					game.load.image(allImages[8] = 'case8', './img/page1-8.png');
+					game.load.image(allImages[9] = 'case9', './img/page2-1.png');
+					game.load.image(allImages[10] = 'case10', './img/page3.png');
+					
+					game.load.image(allDialog[1] = 'dia1', './img/Dialog1-1.png');
+					game.load.image(allDialog[2] = 'dia2', './img/Dialog1-2.png');
+					game.load.image(allDialog[3] = 'dia3', './img/Dialog1-3.png');
+					game.load.image(allDialog[9] = 'dia9', './img/Dialog2-1.png');
+					game.load.image(allDialog[10] = 'dia10', './img/Dialog2-2.png');
+					
+					game.load.image('fixedImage', './img/page2-1_fixed.png');
+					
+					game.load.audio('backgroundTrack', './sound/background.mp3');
+					game.load.audio('runningTrack', './sound/run.mp3');
+					game.load.audio('breathingTrack', './sound/breathing.mp3');
+					game.load.audio('drippingTrack', './sound/dripping.mp3');
+				}
+				function create() {				
+					actualImageNumber = 0;
+					initialPosY = getInitialPosY();
+					initialPosX = getInitialPosX();
+					image = game.add.sprite(initialPosX, initialPosY, allImages[0]);
+					imageHeight = game.cache.getImage(allImages[actualImageNumber]).height;
+					
+					backgroundTrack = game.add.audio('backgroundTrack');
+					backgroundIsPlaying = false;
+					runningTrack = game.add.audio('runningTrack');
+					breathingTrack = game.add.audio('breathingTrack');
+					drippingTrack = game.add.audio('drippingTrack');
+					trackIsPlaying = false;
+					
+					multipleDia = false;
+				}				
+				function update() {
+					nextCase();
+					switch (event) {
+						case 1 :
+							if (!runningTrack.isPlaying){								
+								runningTrack.play();
+							}
+							scroll(10);
+							getNextDialog();
+							break;
+						case 2 :
+							if (!runningTrack.isPlaying){								
+								runningTrack.play();
+							}
+							scroll(50);
+							shake(3);							
+							getNextDialog();
+							break;
+						case 3 :
+							if (!runningTrack.isPlaying){								
+								runningTrack.play();
+							}
+							fade(1);
+							getNextDialog();
+							break;
+						case 4 :
+							if (!breathingTrack.isPlaying){								
+								breathingTrack.play();
+							}
+							scaling(1.2,0.01,-1,0.1);
+							break;
+						case 5 :
+							if (!breathingTrack.isPlaying){								
+								breathingTrack.play();
+							}
+							fade(0.15);
+							break;
+						case 6 :
+							if (!drippingTrack.isPlaying){
+								drippingTrack.play();
+							}
+							fade(0.5);
+							scroll(80);							
+							break;
+						case 7 :							
+							if (!drippingTrack.isPlaying){
+								drippingTrack.play();
+							}
+							fade(1);
+							break;
+						case 8 :							
+							if (!backgroundTrack.isPlaying){
+								backgroundTrack.play();
+							}
+							fade(0.07);
+							scroll(7);
+							break;
+						case 9:													
+							if (!backgroundTrack.isPlaying){
+								backgroundTrack.play();
+							}
+							scroll(0.2);
+							scaling(2,0.001,0,-0.1);
+							getNextDialog();
+							getNextDiaInMultiple();
+							break;
+						case 10:
+							backgroundTrack.pause();
+							break;
+					}
+				}
+				
+				function scroll(vitesse) {
+					if (imageHeight > height) {
+						if (initialPosY >=0) {
+							if (image.y > height - imageHeight) {								
+								image.y -= vitesse;
+							}
+						}
+						
+						else if (initialPosY < 0) {
+							if (image.y < 0) {
+								image.y += vitesse;
+							}
+						}
+					}
+					else {
+						if (initialPosY < 0 && image.y < 0) {
+							image.y += vitesse;
+						}					
+						else if (initialPosY > 0 && image.y > 0){
+							image.y -= vitesse;
+						}
+
+						else if (initialPosX < 0 && image.x < 0) {
+							image.x += vitesse;
+						}
+						else if (initialPosX > 0 && image.x > 0){
+							image.x -= vitesse;
+						}
+					}
+				}				
+				function shake(vitesse) {
+					if (game.time.now < shakeTimer){						
+						if (image.y < 0){
+							image.y += vitesse;
+						}
+						else {
+							image.y -= vitesse;
+						}
+					}
+				}				
+				function scaling(maxScale, scaleSpeed, movingSpeedX, movingSpeedY) {
+					if (image.scale.x < maxScale && image.scale.y < maxScale) {
+						image.scale.x += 0.1*scaleSpeed;
+						image.scale.y += 0.1*scaleSpeed;
+						image.x += movingSpeedX;
+						image.y += movingSpeedY;
+					}
+				}				
+				function fade(vitesse) {
+					if (game.time.now < timer) {
+						image.alpha += 0.1*vitesse;
+					}
+				}
+				
+				function getNextDialog() {					
+					if (game.time.now > dialogTimer) {	
+						dialogImage = game.add.sprite(0, 0, allDialog[actualImageNumber]);
+						diaFadingTimer = game.time.now + 1000;
+					}
+				}
+				
+				function getNextDiaInMultiple() {
+					if (game.time.now > nextDiaTimer) {
+						dialogImage = game.add.sprite(0, 0, allDialog[actualImageNumber+1]);
+						diaFadingTimer = game.time.now + 1000;
+					}
+				}
+				
+				function nextCase() {
+					game.input.keyboard.onDownCallback = function(e) {
+						if (game.time.now > nextTime && actualImageNumber < 10) {
+							if(e.key == "ArrowRight"){							
+								actualImageNumber++;
+								event++;
+								initialPosY = getInitialPosY();
+								initialPosX = getInitialPosX();
+								trackIsPlaying = false;
+								timer = game.time.now + 8000;
+								shakeTimer = game.time.now + 700;
+								nextTime = game.time.now + 1200;
+								dialogTimer = game.time.now + 1000;
+								image = game.add.sprite(initialPosX, initialPosY, allImages[actualImageNumber]);
+								if (actualImageNumber == 9) {									
+									fixedImage = game.add.sprite(0, 0, 'fixedImage');
+									nextDiaTimer = game.time.now + 2000;							
+									nextTime = game.time.now + 2000;
+								}
+								image.alpha = getInitialAlpha();
+								imageHeight = game.cache.getImage(allImages[actualImageNumber]).height;
+							} 
+						}  
+					}
+				}
+				
+				function getInitialPosY() {
+					var allInitialY = new Array (allImages.length);
+					allInitialY[0] = 0;
+					allInitialY[1] = 0;
+					allInitialY[2] = 0;
+					allInitialY[3] = 0;
+					allInitialY[4] = -100;
+					allInitialY[5] = 0;
+					allInitialY[6] = 600;
+					allInitialY[7] = 0;
+					allInitialY[8] = 600;
+					allInitialY[9] = -670;
+					var initialY = allInitialY[actualImageNumber];
+					return initialY;
+				}
+				function getInitialPosX() {
+					var allInitialX = new Array (allImages.length);
+					allInitialX[0] = 0;
+					allInitialX[1] = 0;
+					allInitialX[2] = -700;
+					allInitialX[3] = 0;
+					allInitialX[4] = 0;
+					allInitialX[5] = 0;
+					allInitialX[6] = 0;
+					allInitialX[7] = 0;
+					allInitialX[8] = 0;
+					allInitialX[9] = 0;
+					var initialX = allInitialX[actualImageNumber];
+					return initialX;
+				}				
+				function getInitialAlpha() {
+					var allInitialAlpha = new Array (allImages.length);
+					allInitialAlpha[0] = 1;
+					allInitialAlpha[1] = 1;
+					allInitialAlpha[2] = 1;
+					allInitialAlpha[3] = 0;
+					allInitialAlpha[4] = 1;
+					allInitialAlpha[5] = 0;
+					allInitialAlpha[6] = 0;
+					allInitialAlpha[7] = 0;
+					allInitialAlpha[8] = 0;
+					allInitialAlpha[9] = 1;
+					var initialAlpha = allInitialAlpha[actualImageNumber];
+					return initialAlpha;
+				}
+			};
+		</script>	
+		</div>
+	</body>
+</html>
